@@ -4,7 +4,13 @@
 Favicon Generator
 =================
 
-Class generation favicon for browsers and devices Android, Apple, Windows and display of html code. It supports a large number of settings such as margins, color, compression, three different methods of crop and screen orientation.
+This class can create Favicon images for sites and mobile devices.
+
+It takes a give base icon image and creates multiple versions of the image for use as favicon on Web sites or be displayed by mobile devices like those using systems of Apple, Microsoft, and Android.
+
+The class can generate all the versions of the icon images with the different sizes, as well the necessary HTML to reference the icon images in a Web page.
+
+The margins, color, compression, crop method and screen orientation are configurable parameters.
 
 ## Requirements
 * PHP version ~5.3.3
