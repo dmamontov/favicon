@@ -1,5 +1,7 @@
 [![Latest Stable Version](https://poser.pugx.org/dmamontov/favicon/v/stable.svg)](https://packagist.org/packages/dmamontov/favicon)
 [![License](https://poser.pugx.org/dmamontov/favicon/license.svg)](https://packagist.org/packages/dmamontov/favicon)
+[![Total Downloads](https://poser.pugx.org/dmamontov/favicon/downloads)](https://packagist.org/packages/dmamontov/favicon)
+[![PHP Classes](https://img.shields.io/badge/php-classes-blue.svg)](http://www.phpclasses.org/package/9265-PHP-Create-Favicon-images-for-sites-and-mobile-devices.html)
 
 Favicon Generator
 =================
