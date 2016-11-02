@@ -467,7 +467,7 @@ class FaviconGenerator
 
             $manifest['icons'][] = array(
                 'src'     => "/favicon/android-chrome-{$size}.png",
-                'size'    => $size,
+                'sizes'    => $size,
                 'type'    => 'image/png',
                 'density' => $mapDensity[$size]
             );
