@@ -151,18 +151,25 @@ class FaviconGenerator
     private $root;
 
     /**
+     * Destination directory
+     * @var string
+     * @access private
+     */
+    private $dest;
+
+    /**
      * Flag of forced re-create files.
      * @var boolean
      * @access private
      */
     private $created;
 
-   /**
-    * Settings generation.
-    * @var array
-    * @access private
-    */
-    private $settings = array();
+    /**
+     * Settings generation.
+     * @var array
+     * @access private
+     */
+    private $settings = [];
 
     /**
      * Validation and installation defaults.
@@ -172,10 +179,14 @@ class FaviconGenerator
      * @access public
      * @final
      */
-    final public function __construct($icon = '', $created = false)
+    final public function __construct($icon = '', $created = false, $subfolder = null)
     {
+        $this->created = $created;
+        $this->root = php_sapi_name() == 'cli' ? __DIR__ : $_SERVER['DOCUMENT_ROOT'];
+        $this->dest = is_null($subfolder) ? $this->dest = "{$this->root}/favicon" : $this->dest = "{$this->root}/favicon/$subfolder";
+
         if (empty($icon)) {
-            $icon = "{$this->root}/favicon/.original";
+            $icon = "{$this->dest}/.original";
         }
 
         if (file_exists($icon) === false) {
@@ -185,24 +196,21 @@ class FaviconGenerator
             throw new RuntimeException('Class Imagick not found');
         }
 
-        $this->created = $created;
-        $this->root = php_sapi_name() == 'cli' ? __DIR__ : $_SERVER['DOCUMENT_ROOT'];
-
-        if (file_exists("{$this->root}/favicon/.settings")) {
-            $this->settings = json_decode(file_get_contents("{$this->root}/favicon/.settings"), true);
+        if (file_exists("{$this->dest}/.settings")) {
+            $this->settings = json_decode(file_get_contents("{$this->dest}/.settings"), true);
         } else {
-            $this->settings = array(
+            $this->settings = [
                 'compression' => self::COMPRESSION_ORIGINAL,
                 'cropmethod'  => self::CROPMETHOD_CENTER
-            );
+            ];
         }
 
         if (
-            file_exists("{$this->root}/favicon/.original") === false ||
-            filesize($icon) != filesize("{$this->root}/favicon/.original")
+            file_exists("{$this->dest}/.original") === false ||
+            filesize($icon) != filesize("{$this->dest}/.original")
         ) {
-            @mkdir("{$this->root}/favicon", 0755);
-            @copy($icon, "{$this->root}/favicon/.original");
+            @mkdir("{$this->dest}", 0755);
+            @copy($icon, "{$this->dest}/.original");
             $this->created == true;
         }
     }
@@ -215,7 +223,7 @@ class FaviconGenerator
      */
     final public function __destruct()
     {
-        file_put_contents("{$this->root}/favicon/.settings", json_encode($this->settings));
+        file_put_contents("{$this->dest}/.settings", json_encode($this->settings));
     }
 
     /**
@@ -230,12 +238,12 @@ class FaviconGenerator
         if (
             in_array(
                 $compression,
-                array(
+                [
                     self::COMPRESSION_ORIGINAL,
                     self::COMPRESSION_LOW,
                     self::COMPRESSION_HIGH,
                     self::COMPRESSION_VERYHIGH
-                )
+                ]
             ) == false
         ) {
             throw new RuntimeException('Unacceptable degree of compression');
@@ -272,11 +280,11 @@ class FaviconGenerator
         if (
             in_array(
                 $method,
-                array(
+                [
                     self::CROPMETHOD_CENTER,
                     self::CROPMETHOD_BALANCED,
                     self::CROPMETHOD_ENTROPY
-                )
+                ]
             ) == false
         ) {
             throw new RuntimeException('Illegal crop method');
@@ -320,7 +328,7 @@ class FaviconGenerator
      * @access public
      * @final
      */
-    final public function setConfig($config = array())
+    final public function setConfig($config = [])
     {
         if (is_array($config) === false || count($config) < 1) {
             throw new RuntimeException('Invalid configuration');
@@ -348,11 +356,11 @@ class FaviconGenerator
      */
     final public function createBasic()
     {
-        foreach (array('16x16', '32x32', '96x96') as $size) {
-            if ($this->created || file_exists("{$this->root}/favicon/favicon-{$size}.png") == false) {
+        foreach (['16x16', '32x32', '96x96'] as $size) {
+            if ($this->created || file_exists("{$this->dest}/favicon-{$size}.png") == false) {
                 $image = $this->createImage($size);
 
-                $image->writeimage("{$this->root}/favicon/favicon-{$size}.png");
+                $image->writeimage("{$this->dest}/favicon-{$size}.png");
             }
         }
 
@@ -368,14 +376,14 @@ class FaviconGenerator
     final public function createApple()
     {
         foreach (
-            array('57x57', '60x60', '72x72', '76x76', '114x114', '120x120', '144x144', '152x152', '180x180')
+            ['57x57', '60x60', '72x72', '76x76', '114x114', '120x120', '144x144', '152x152', '180x180']
             as $size
         ) {
-            if ($this->created || file_exists("{$this->root}/favicon/apple-touch-icon-{$size}.png") == false) {
+            if ($this->created || file_exists("{$this->dest}/apple-touch-icon-{$size}.png") == false) {
                 $image = $this->createImage($size);
                 $image = $this->setColorAndMargin($image, 'apple-background', 'apple-margin');
 
-                $image->writeimage("{$this->root}/favicon/apple-touch-icon-{$size}.png");
+                $image->writeimage("{$this->dest}/apple-touch-icon-{$size}.png");
             }
         }
 
@@ -392,9 +400,9 @@ class FaviconGenerator
     {
         $replace = false;
 
-        $manifest = file_exists("{$this->root}/favicon/manifest.json") ?
-                            json_decode(file_get_contents("{$this->root}/favicon/manifest.json"), true) :
-                            array();
+        $manifest = file_exists("{$this->dest}/manifest.json") ?
+                            json_decode(file_get_contents("{$this->dest}/manifest.json"), true) :
+                            [];
 
         if (
             isset($this->settings['android-name']) &&
@@ -431,7 +439,7 @@ class FaviconGenerator
             empty($this->settings['android-orientation']) === false &&
             in_array(
                 $this->settings['android-orientation'],
-                array(self::ANDROID_LANDSCAPE, self::ANDROID_PORTRAIT)
+                [self::ANDROID_LANDSCAPE, self::ANDROID_PORTRAIT]
             ) &&
             (
                 isset($manifest['orientation']) === false ||
@@ -446,35 +454,35 @@ class FaviconGenerator
             $manifest['orientation'] = $this->settings['android-orientation'];
         }
 
-        $mapDensity = array(
+        $mapDensity = [
             '36x36' => '0.75',
             '48x48' => '1.0',
             '72x72' => '1.5',
             '96x96' => '2.0',
             '144x144' => '3.0',
             '192x192' => '4.0'
-        );
+        ];
         foreach (
-            array('36x36', '48x48', '72x72', '96x96', '144x144', '192x192')
+            ['36x36', '48x48', '72x72', '96x96', '144x144', '192x192']
             as $size
         ) {
-            if ($this->created || file_exists("{$this->root}/favicon/android-chrome-{$size}.png") == false) {
+            if ($this->created || file_exists("{$this->dest}/android-chrome-{$size}.png") == false) {
                 $image = $this->createImage($size);
                 $image = $this->setColorAndMargin($image, 'android-background', 'android-margin');
 
-                $image->writeimage("{$this->root}/favicon/android-chrome-{$size}.png");
+                $image->writeimage("{$this->dest}/android-chrome-{$size}.png");
             }
 
-            $manifest['icons'][] = array(
+            $manifest['icons'][] = [
                 'src'     => "/favicon/android-chrome-{$size}.png",
                 'size'    => $size,
                 'type'    => 'image/png',
                 'density' => $mapDensity[$size]
-            );
+            ];
         }
 
         if ($replace && count($manifest) > 0) {
-            file_put_contents("{$this->root}/favicon/manifest.json", json_encode($manifest));
+            file_put_contents("{$this->dest}/manifest.json", json_encode($manifest));
         }
 
         return true;
@@ -488,8 +496,8 @@ class FaviconGenerator
      */
     final public function createMicrosoft()
     {
-        foreach (array('70x70', '144x144', '150x150', '310x310', '310x150') as $size) {
-            if ($this->created || file_exists("{$this->root}/favicon/mstile-{$size}.png") == false) {
+        foreach (['70x70', '144x144', '150x150', '310x310', '310x150'] as $size) {
+            if ($this->created || file_exists("{$this->dest}/mstile-{$size}.png") == false) {
                 if ($size == '310x150') {
                     $image = $this->createImage('150x150');
                     $image->borderImage(new ImagickPixel('none'), 80, 0);
@@ -497,32 +505,32 @@ class FaviconGenerator
                     $image = $this->createImage($size);
                 }
 
-                $image->writeimage("{$this->root}/favicon/mstile-{$size}.png");
+                $image->writeimage("{$this->dest}/mstile-{$size}.png");
             }
         }
 
-        if (file_exists("{$this->root}/favicon/browserconfig.xml") === false || $this->created) {
+        if (file_exists("{$this->dest}/browserconfig.xml") === false || $this->created) {
             $browserconfig =
-"<?xml version=\"1.0\" encoding=\"utf-8\"?>
+'<?xml version="1.0" encoding="utf-8"?>
 <browserconfig>
     <msapplication>
         <tile>
-            <square70x70logo src=\"/favicon/mstile-70x70.png\"/>
-            <square150x150logo src=\"/favicon/mstile-150x150.png\"/>
-            <square310x310logo src=\"/favicon/mstile-310x310.png\"/>
-            <wide310x150logo src=\"/favicon/mstile-310x150.png\"/>
-            <TileColor>" .
+            <square70x70logo src="/favicon/mstile-70x70.png"/>
+            <square150x150logo src="/favicon/mstile-150x150.png"/>
+            <square310x310logo src="/favicon/mstile-310x310.png"/>
+            <wide310x150logo src="/favicon/mstile-310x150.png"/>
+            <TileColor>' .
             (
                 isset($this->settings['ms-background']) ?
                 "#{$this->settings['ms-background']}" :
                 ''
             ) .
-            "</TileColor>
+            '</TileColor>
         </tile>
     </msapplication>
-</browserconfig>";
+</browserconfig>';
 
-            file_put_contents("{$this->root}/favicon/browserconfig.xml", $browserconfig);
+            file_put_contents("{$this->dest}/browserconfig.xml", $browserconfig);
         }
 
         return true;
@@ -553,31 +561,32 @@ class FaviconGenerator
     final public function getHtml()
     {
         $html = '';
+        $folder = str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->dest);
 
-        foreach (array('16x16', '32x32', '96x96') as $size) {
-            if (file_exists("{$this->root}/favicon/favicon-{$size}.png")) {
-                $html .= "<link rel=\"icon\" type=\"image/png\" href=\"/favicon/favicon-{$size}.png\" sizes=\"{$size}\">\n";
+        foreach (['16x16', '32x32', '96x96'] as $size) {
+            if (file_exists("{$this->dest}/favicon-{$size}.png")) {
+                $html .= "<link rel=\"icon\" type=\"image/png\" href=\"$folder/favicon-{$size}.png\" sizes=\"{$size}\">\n";
             }
         }
 
         foreach (
-            array('57x57', '60x60', '72x72', '76x76', '114x114', '120x120', '144x144', '152x152', '180x180')
+            ['57x57', '60x60', '72x72', '76x76', '114x114', '120x120', '144x144', '152x152', '180x180']
             as $size
         ) {
-            if (file_exists("{$this->root}/favicon/apple-touch-icon-{$size}.png")) {
-                $html .= "<link rel=\"apple-touch-icon\" sizes=\"{$size}\" href=\"/favicon/apple-touch-icon-{$size}.png\">\n";
+            if (file_exists("{$this->dest}/apple-touch-icon-{$size}.png")) {
+                $html .= "<link rel=\"apple-touch-icon\" sizes=\"{$size}\" href=\"$folder/apple-touch-icon-{$size}.png\">\n";
             }
         }
 
-        if (file_exists("{$this->root}/favicon/android-chrome-192x192.png")) {
-            $html .= "<link rel=\"icon\" type=\"image/png\" href=\"/favicon/android-chrome-192x192.png\" sizes=\"192x192\">\n";
+        if (file_exists("{$this->dest}/android-chrome-192x192.png")) {
+            $html .= "<link rel=\"icon\" type=\"image/png\" href=\"$folder/android-chrome-192x192.png\" sizes=\"192x192\">\n";
         }
-        if (file_exists("{$this->root}/favicon/manifest.json")) {
-            $html .= "<link rel=\"manifest\" href=\"/favicon/manifest.json\">\n";
+        if (file_exists("{$this->dest}/manifest.json")) {
+            $html .= "<link rel=\"manifest\" href=\"$folder/manifest.json\">\n";
         }
 
-        if (file_exists("{$this->root}/favicon/mstile-144x144.png")) {
-            $html .= "<meta name=\"msapplication-TileImage\" content=\"/favicon/mstile-144x144.png\">\n";
+        if (file_exists("{$this->dest}/mstile-144x144.png")) {
+            $html .= "<meta name=\"msapplication-TileImage\" content=\"$folder/mstile-144x144.png\">\n";
         }
         if (isset($this->settings['ms-background'])) {
             $html .= "<meta name=\"msapplication-TileColor\" content=\"#{$this->settings['ms-background']}\">\n";
@@ -651,7 +660,7 @@ class FaviconGenerator
     {
         list($sizes['width'], $sizes['height']) = explode('x', $size);
 
-        $original = new Imagick("{$this->root}/favicon/.original");
+        $original = new Imagick("{$this->dest}/.original");
 
         $source = $original->getImageGeometry();
 
@@ -699,10 +708,10 @@ class FaviconGenerator
     {
         $size = $image->getImageGeometry();
 
-        return array(
+        return [
             'x' => (int) (($size['width'] - $width) / 2),
             'y' => (int) (($size['height'] - $height)/2)
-        );
+        ];
     }
 
     /**
@@ -718,7 +727,7 @@ class FaviconGenerator
     {
         $size = $image->getImageGeometry();
 
-        $points = array();
+        $points = [];
         $halfWidth = ceil($size['width'] / 2);
         $halfHeight = ceil($size['height'] / 2);
 
@@ -754,11 +763,11 @@ class FaviconGenerator
             $ycenter /= $sum;
         }
 
-        $points[] = array(
+        $points[] = [
             'x' => $xcenter,
             'y' => $ycenter,
             'sum' => $sum / round($cloneSize['height'] * $cloneSize['width'])
-        );
+        ];
 
         $totalWeight = array_reduce(
             $points,
@@ -786,7 +795,7 @@ class FaviconGenerator
             $topleftY -= ($topleftY + $height) - $size['height'];
         }
 
-        return array('x' => $topleftX, 'y' => $topleftY);
+        return ['x' => $topleftX, 'y' => $topleftY];
     }
 
     /**
@@ -806,10 +815,10 @@ class FaviconGenerator
         $clone->blackThresholdImage('#070707');
         $clone->blurImage(3, 2);
 
-        return array(
+        return [
             'x' => $this->sliceEntropy($clone, $width, 'h'),
             'y' => $this->sliceEntropy($clone, $height, 'v')
-        );
+        ];
     }
 
     /**
@@ -823,7 +832,7 @@ class FaviconGenerator
      */
     final private function sliceEntropy(Imagick $image, $size, $axis)
     {
-        $rank = array();
+        $rank = [];
 
         $imageSize = $image->getImageGeometry();
         $originalSize = $axis == 'h' ? $imageSize['width'] : $imageSize['height'];
@@ -861,7 +870,7 @@ class FaviconGenerator
                 $value = $value + $p * log($p, 2);
             }
 
-            $rank[] = array('offset' => $start, 'entropy' => -$value);
+            $rank[] = ['offset' => $start, 'entropy' => -$value];
             $start += $sliceSize;
         }
 
