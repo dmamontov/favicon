@@ -209,7 +209,7 @@ class FaviconGenerator
             file_exists("{$this->dest}/.original") === false ||
             filesize($icon) != filesize("{$this->dest}/.original")
         ) {
-            @mkdir("{$this->dest}", 0755);
+            @mkdir("{$this->dest}", 0755, true);
             @copy($icon, "{$this->dest}/.original");
             $this->created == true;
         }
