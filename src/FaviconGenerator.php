@@ -473,8 +473,9 @@ class FaviconGenerator
                 $image->writeimage("{$this->dest}/android-chrome-{$size}.png");
             }
 
+            $folder = str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->dest);
             $manifest['icons'][] = [
-                'src'     => "/favicon/android-chrome-{$size}.png",
+                'src'     => "$folder/android-chrome-{$size}.png",
                 'size'    => $size,
                 'type'    => 'image/png',
                 'density' => $mapDensity[$size]
@@ -509,16 +510,18 @@ class FaviconGenerator
             }
         }
 
+        $folder = str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->dest);
+
         if (file_exists("{$this->dest}/browserconfig.xml") === false || $this->created) {
             $browserconfig =
 '<?xml version="1.0" encoding="utf-8"?>
 <browserconfig>
     <msapplication>
         <tile>
-            <square70x70logo src="/favicon/mstile-70x70.png"/>
-            <square150x150logo src="/favicon/mstile-150x150.png"/>
-            <square310x310logo src="/favicon/mstile-310x310.png"/>
-            <wide310x150logo src="/favicon/mstile-310x150.png"/>
+            <square70x70logo src="' . $folder . '/mstile-70x70.png"/>
+            <square150x150logo src="' . $folder . '/mstile-150x150.png"/>
+            <square310x310logo src="' . $folder . '/mstile-310x310.png"/>
+            <wide310x150logo src="' . $folder . '/mstile-310x150.png"/>
             <TileColor>' .
             (
                 isset($this->settings['ms-background']) ?
