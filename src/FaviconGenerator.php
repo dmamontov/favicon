@@ -174,6 +174,9 @@ class FaviconGenerator
      */
     final public function __construct($icon = '', $created = false)
     {
+        $this->created = $created;
+        $this->root = php_sapi_name() == 'cli' ? __DIR__ : $_SERVER['DOCUMENT_ROOT'];
+        
         if (empty($icon)) {
             $icon = "{$this->root}/favicon/.original";
         }
@@ -184,9 +187,6 @@ class FaviconGenerator
         if (class_exists('Imagick') === false) {
             throw new RuntimeException('Class Imagick not found');
         }
-
-        $this->created = $created;
-        $this->root = php_sapi_name() == 'cli' ? __DIR__ : $_SERVER['DOCUMENT_ROOT'];
 
         if (file_exists("{$this->root}/favicon/.settings")) {
             $this->settings = json_decode(file_get_contents("{$this->root}/favicon/.settings"), true);
